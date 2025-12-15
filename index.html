@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTK Adaptive Lesson Plan Creator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* --- UI STYLES (MATCHING SCREENSHOT) --- */
+        body { font-family: 'Arial', sans-serif; background-color: #f0f8ff; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 95%; margin: auto; padding: 20px 10px; }
+        .header { background-color: #007bff; color: white; text-align: center; padding: 15px 0; font-size: 1.2em; font-weight: bold; margin-bottom: 20px; border-radius: 8px 8px 0 0; }
+        .input-card-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-around; }
+        .input-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); flex: 1 1 45%; min-width: 300px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; font-size: 0.9em; }
+        input[type="text"], select, textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px; }
+        
+        .main-button { background-color: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; width: 100%; margin-top: 20px; transition: background-color 0.3s; }
+        .main-button:hover { background-color: #218838; }
+
+        /* --- OUTPUT STYLES (MATCHING PDF TEMPLATE) --- */
+        #lessonPlanOutput { margin-top: 40px; border: 1px solid #000; padding: 20px; background: #fff; display: none; }
+        #lessonPlanContent { width: 100%; font-size: 10pt; line-height: 1.5; }
+        #lessonPlanContent h2 { color: #000; text-align: center; margin-top: 0; font-size: 14pt; }
+        
+        /* General Info Table (Top of PDF) */
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .info-table td { border: 1px solid #000; padding: 6px; vertical-align: top; }
+        .info-table .label { width: 30%; font-weight: bold; background-color: #f0f0f0; }
+
+        /* Detailed Procedure Table (Point 8) */
+        .procedure-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .procedure-table th, .procedure-table td { border: 1px solid #000; padding: 8px 5px; vertical-align: top; text-align: left; }
+        .procedure-table th { background-color: #e0e0e0; font-weight: bold; text-align: center; }
+        
+        /* PDF Download Button */
+        #pdfDownloadBtn { background-color: #dc3545; margin-top: 20px; display: block; width: 100%; }
+        
+    </style>
+</head>
+<body>
+
+<div class="header">GTK Adaptive Lesson Plan Creator</div>
+
+<div class="container">
+    <form id="lessonPlanForm">
+
+        <div class="input-card-grid">
+            <div class="input-card">
+                <label for="medium">1. Medium (மொழி)</label>
+                <select id="medium" required onchange="updateLanguageDependency()">
+                    <option value="English">English Medium</option>
+                    <option value="Tamil">Tamil Medium</option>
+                </select>
+                <label for="class">Class (வகுப்பு)</label>
+                <select id="class" required>
+                    <option value="VIII">Class VIII</option>
+                    <option value="VI">Class VI</option>
+                    <option value="XII">Class XII</option>
+                </select>
+            </div>
+            
+            <div class="input-card">
+                <label for="subject">3. Subject (பாடம்)</label>
+                <select id="subject" required onchange="updateActivityOptions()">
+                    <option value="English">English</option>
+                    <option value="Tamil">Tamil</option>
+                    <option value="Maths">Mathematics</option>
+                    <option value="Science">Science</option>
+                </select>
+                <label for="title">Lesson Title</label>
+                <input type="text" id="title" value="Hobby Turns into a Successful Career" required>
+            </div>
+
+            <div class="input-card">
+                <label for="unit">2. Unit</label>
+                <input type="text" id="unit" value="II - Prose" required>
+                <label for="dates">1. Date</label>
+                <input type="text" id="dates" value="03.02.2025" required>
+                <label for="duration">Duration (mins)</label>
+                <input type="text" id="duration" value="45 minutes" required>
+            </div>
+             <div class="input-card">
+                <label for="methodology">5. Methodology (Multi-select)</label>
+                <select id="methodology" multiple required>
+                    <option value="interactive">Interactive</option>
+                    <option value="explanatory">Explanatory</option>
+                    <option value="demonstrative">Demonstrative</option>
+                    <option value="group_discussion">Group Discussion</option>
+                </select>
+                <label for="teachingAids">6. Teaching Aids</label>
+                <input type="text" id="teachingAids" value="Chart, Flash cards" required>
+            </div>
+            
+            <div class="input-card">
+                <label for="activityFocus">8. Activities Planned (Focus)</label>
+                <select id="activityFocus" required onchange="updateSubActivityOptions()">
+                    </select>
+            </div>
+            <div class="input-card" id="subActivityGroup" style="display:none;">
+                <label for="subActivity">8. Sub-Activity Type (Strategy)</label>
+                <select id="subActivity" required>
+                    </select>
+            </div>
+        </div>
+
+        <button type="submit" class="main-button">Generate Lesson Plan</button>
+    </form>
+    
+    <div id="lessonPlanOutput">
+        <div id="lessonPlanContent">
+            </div>
+        <button id="pdfDownloadBtn" onclick="alert('PDF download is only functional in a browser environment, not in this sandbox. The content is displayed above.');">Download PDF (Simulated)</button>
+    </div>
+</div>
+
+<script>
+    // --- JavaScript Logic for Dynamic Options ---
+    
+    // Define main activity options based on subject category (Point 8)
+    const activityOptions = {
+        Language: [
+            { value: "Motivation", label: "Motivation" },
+            { value: "Reading", label: "Reading (Pre/While/Post activities)" },
+            { value: "Consolidation", label: "Consolidation" },
+            { value: "Writing", label: "Writing (Hints/Group Work/Presentation)" }
+        ],
+        Core: [
+            { value: "Motivation", label: "Motivation" },
+            { value: "Consolidation", label: "Consolidation (Mind Map Types)" },
+            { value: "Reinforcement", label: "Reinforcement" },
+            { value: "Enrichment", label: "Enrichment" }
+        ]
+    };
+    
+    const consolidationOptions = [
+        { value: "Events and facts (Flowchart)", label: "Events and facts (Flowchart)" },
+        { value: "Timeline (for History/Steps)", label: "Timeline (for History/Steps)" },
+        { value: "Concept Map (Hierarchical)", label: "Concept Map (Hierarchical)" },
+    ];
+    
+    const langActivityOptions = {
+        "Reading": [
+            { value: "Pre-reading activities", label: "Pre-reading activities" },
+            { value: "While-reading activities", label: "While-reading activities" },
+            { value: "Post-reading activities", label: "Post-reading activities" }
+        ],
+        "Consolidation": [
+            { value: "Group Presentation", label: "Group Presentation" },
+            { value: "Role Play", label: "Role Play" }
+        ]
+    };
+
+    function getSubjectCategory(subject) {
+        if (subject === 'Tamil' || subject === 'English') {
+            return 'Language';
+        } else {
+            return 'Core';
+        }
+    }
+
+    function updateActivityOptions() {
+        const subject = document.getElementById('subject').value;
+        const focusSelect = document.getElementById('activityFocus');
+        const category = getSubjectCategory(subject);
+        
+        focusSelect.innerHTML = '<option value="">-- Select Activity Focus --</option>';
+        document.getElementById('subActivityGroup').style.display = 'none';
+
+        if (category) {
+            const options = activityOptions[category];
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                focusSelect.appendChild(opt);
+            });
+        }
+    }
+
+    function updateSubActivityOptions() {
+        const focus = document.getElementById('activityFocus').value;
+        const subActivityGroup = document.getElementById('subActivityGroup');
+        const subActivitySelect = document.getElementById('subActivity');
+        const subject = document.getElementById('subject').value;
+        const category = getSubjectCategory(subject);
+
+        subActivitySelect.innerHTML = ''; 
+        subActivityGroup.style.display = 'none';
+
+        let optionsToLoad = [];
+        let showSubGroup = true;
+
+        if (category === 'Core' && focus === 'Consolidation') {
+            optionsToLoad = consolidationOptions;
+        } else if (category === 'Language' && langActivityOptions[focus]) {
+            optionsToLoad = langActivityOptions[focus];
+        } else {
+            showSubGroup = false;
+        }
+
+        if (showSubGroup && optionsToLoad.length > 0) {
+            subActivityGroup.style.display = 'block';
+            optionsToLoad.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.label;
+                subActivitySelect.appendChild(opt);
+            });
+            subActivitySelect.selectedIndex = 0; // Select the first one by default
+        } else {
+            subActivityGroup.style.display = 'none';
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', updateActivityOptions);
+    
+    // --- Form Submission and Lesson Plan Generation ---
+
+    document.getElementById('lessonPlanForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const methodologyOptions = Array.from(document.getElementById('methodology').selectedOptions).map(opt => opt.value);
+        let methodologyText = methodologyOptions.join(', ');
+        
+        // Translate methodologies if Tamil medium is selected
+        if (document.getElementById('medium').value === 'Tamil') {
+            const tamilMap = {
+                'interactive': 'ஊடாடும் முறை',
+                'explanatory': 'விளக்கமளித்தல்',
+                'demonstrative': 'செயல் விளக்க முறை',
+                'group_discussion': 'குழு விவாதம்'
+            };
+            methodologyText = methodologyOptions.map(m => tamilMap[m] || m).join(', ');
+        }
+        
+        const data = {
+            medium: document.getElementById('medium').value,
+            class: document.getElementById('class').value,
+            subject: document.getElementById('subject').value,
+            unit: document.getElementById('unit').value,
+            title: document.getElementById('title').value,
+            dates: document.getElementById('dates').value,
+            duration: document.getElementById('duration').value,
+            methodology: methodologyText,
+            teachingAids: document.getElementById('teachingAids').value,
+            activityFocus: document.getElementById('activityFocus').value,
+            subActivity: document.getElementById('subActivity').value || 'N/A',
+            // Simulated AI/Static Content based on PDF and general standards
+            studentTeacher: 'R. Dharani',
+            guideTeacher: 'A. Kumar',
+            section: 'A',
+            learningOutcomes: 'Recalls the previous knowledge; Recognizes the topic; Understands the content; Grasps the meaning of new words; Locates the main ideas and facts.',
+            gist: 'The passage is about a boy named Mani who develops a hobby of writing after listening to his grandfather\'s stories. This hobby eventually helps him build a successful career, illustrating the idea that passion can lead to profession. Key vocabulary: fiction, spare, accurately.',
+            weekendActivity: 'Write a short essay describing your hobby and the steps you would take to turn it into a successful career.',
+            remedialAction: 'Provide additional practice in identifying synonyms/antonyms. Use flashcards for difficult vocabulary.',
+        };
+
+        const lessonPlanHTML = generateLessonPlanHTML(data);
+        document.getElementById('lessonPlanContent').innerHTML = lessonPlanHTML;
+        document.getElementById('lessonPlanOutput').style.display = 'block';
+        window.scrollTo({ top: document.getElementById('lessonPlanOutput').offsetTop, behavior: 'smooth' });
+    });
+
+    function generateLessonPlanHTML(data) {
+        // This function creates the output using the PDF's table structure
+        
+        // 1. Core Lesson Info (Top Table)
+        const coreInfo = `
+            <table class="info-table">
+                <tr>
+                    <td class="label">Name of the Student Teacher</td>
+                    <td>: ${data.studentTeacher}</td>
+                    <td class="label">Name of the Guide Teacher</td>
+                    <td>: ${data.guideTeacher}</td>
+                </tr>
+                <tr>
+                    <td class="label">Name of the Class</td>
+                    <td>: ${data.class}</td>
+                    <td class="label">Subject / Medium</td>
+                    <td>: ${data.subject} / ${data.medium}</td>
+                </tr>
+                <tr>
+                    <td class="label">Unit</td>
+                    <td>: ${data.unit}</td>
+                    <td class="label">Topic</td>
+                    <td>: ${data.title}</td>
+                </tr>
+                <tr>
+                    <td class="label">Duration</td>
+                    <td>: ${data.duration}</td>
+                    <td class="label">Date</td>
+                    <td>: ${data.dates}</td>
+                </tr>
+                <tr>
+                    <td class="label" colspan="2">4. Learning Outcomes</td>
+                    <td colspan="2">: ${data.learningOutcomes.replace(/;/g, '<br> * ')}</td>
+                </tr>
+            </table>
+        `;
+        
+        // 2. Teaching Aids and Methodology (Simplified List)
+        const aidsAndMethod = `
+            <h4>5. Methodology: </h4>
+            <p>${data.methodology}</p>
+            <h4>6. Teaching Aids: </h4>
+            <p>${data.teachingAids}</p>
+            <h4>7. Content/Gist of the Lesson: </h4>
+            <p>${data.gist}</p>
+        `;
+        
+        // 3. Detailed Procedure/Activity Table (Point 8)
+        const activityProcedure = `
+            <h4 style="text-align:center; margin-top:20px;">8. Activities Planned / Learning Experience (Procedure)</h4>
+            <table class="procedure-table">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Content</th>
+                        <th style="width: 20%;">Specifications / Objectives</th>
+                        <th style="width: 40%;">Learning Experience (Teacher & Student Activity)</th>
+                        <th style="width: 15%;">Evaluation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Motivation / Testing the previous knowledge</td>
+                        <td>Recalls the previous knowledge.</td>
+                        <td>
+                            Teacher asks questions to the students:<br>
+                            - What is your favourite hobby? <br>
+                            - Name a successful person who turned their hobby into a career.
+                        </td>
+                        <td>What is your favourite hobby?</td>
+                    </tr>
+                    <tr>
+                        <td>Topic Introduction: "${data.title}"</td>
+                        <td>Recognizes the topic of the lesson.</td>
+                        <td>Teacher writes the topic of the lesson on the board. Students note the title.</td>
+                        <td>What is the title of the lesson?</td>
+                    </tr>
+                    <tr>
+                        <td>Lesson Gist and New Words (fiction, spare, accurately)</td>
+                        <td>Understands the content, Grasps the meaning of new words.</td>
+                        <td>
+                            Teacher reads the passage aloud with proper stress. Students listen and follow along. 
+                            Teacher explains the gist and teaches new vocabulary using **Flashcards** .
+                        </td>
+                        <td>What is meant by fiction? What is the main idea of the passage?</td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f7f7f7;">**Core Student-Centred Activity**</td>
+                        <td>Locates main ideas, Explains the prose.</td>
+                        <td>
+                            **Activity Focus:** ${data.activityFocus} (**${data.subActivity}**)<br>
+                            *Detailed Procedure Example (if Reading/Pre-reading):* Teacher asks students to predict the story based on the title and pictures. Students discuss in pairs and share one prediction with the class. This serves as a **Pre-Reading activity**.
+                        </td>
+                        <td>Summarize the story in two lines.</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+
+        // 4. Follow-up and Signatures
+        const followUp = `
+            <h4 style="margin-top:20px;">9. Week-end Activity / Assignment</h4>
+            <p>${data.weekendActivity}</p>
+            
+            <h4 style="margin-top:10px;">10. Remedial Action</h4>
+            <p>${data.remedialAction}</p>
+
+            <table style="width: 100%; margin-top: 50px; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 50%; text-align: left; padding: 10px;">Signature of the Teacher Trainee: ${data.studentTeacher}</td>
+                    <td style="width: 50%; text-align: right; padding: 10px;">Signature of the Guide Teacher: ${data.guideTeacher}</td>
+                </tr>
+            </table>
+        `;
+
+        return `<h2>LESSON PLAN</h2>` + coreInfo + aidsAndMethod + activityProcedure + followUp;
+    }
+
+</script>
+
+</body>
+  </html>
+                  
