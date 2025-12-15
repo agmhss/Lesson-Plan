@@ -99,8 +99,8 @@
         <div class="bg-white rounded-xl shadow-lg p-6 space-y-5 h-fit">
             
             <div class="p-3 bg-gray-50 rounded border border-gray-200">
-                <label class="block text-xs font-bold text-gray-500 uppercase">Google Gemini API Key</label>
-                <input type="password" id="apiKeyInput" class="w-full mt-1 px-3 py-2 border rounded text-sm outline-none focus:border-indigo-500" placeholder="Paste AIza... key here" />
+                <label class="block text-xs font-bold text-gray-500 uppercase">Grok API Key (xAI)</label>
+                <input type="password" id="apiKeyInput" class="w-full mt-1 px-3 py-2 border rounded text-sm outline-none focus:border-indigo-500" placeholder="Paste xai-... key here" />
             </div>
 
             <div class="border-t pt-4">
@@ -217,62 +217,73 @@ document.getElementById("runOCR").addEventListener("click", async () => {
 
 // --- 2. AI GENERATION LOGIC ---
 document.getElementById("generatePlan").addEventListener("click", async () => {
-    const apiKey = document.getElementById("apiKeyInput").value;
+    const apiKey = document.getElementById("apiKeyInput").value.trim();
     if(!apiKey) return alert("API Key required");
     if(!ocrText) return alert("Please extract text first (Step 1)");
-//--------------------------------------------
-// AI MODEL LOADER
-//--------------------------------------------
-async function loadModel() {
-    if (!summarizer) {
-        setStatus("Loading AI model…");
-        summarizer = await window.transformers.pipeline("summarization", "Xenova/t5-small");
-        setStatus("");
 
-    // PROMPT FOR STRICT JSON STRUCTURE
-    const prompt = `
-    You are a Teacher for Tamil Nadu State Board.
-    Analyze this textbook content:
-    "${ocrText.slice(0, 10000)}"
+    setStatus("AI Generating", "Consulting Grok Model...");
 
-    Create a JSON object for a Lesson Plan table.
-    The user details are: Class ${document.getElementById("cls").value}, Subject ${document.getElementById("subject").value}, Topic ${document.getElementById("lessonTopic").value}.
+    const prompt = `You are a Teacher for Tamil Nadu State Board.
+Analyze this textbook content:
+"${ocrText.slice(0, 20000)}"  // Limited to avoid token overflow
 
-    RETURN ONLY JSON. Format:
-    {
-        "introduction": "Brief text to introduce lesson",
-        "rows": [
-            {
-                "content": "Sub-topic or Content segment",
-                "specifications": "Specific objective (e.g. Recognizes, Understands)",
-                "teacher_activity": "What teacher does/explains",
-                "student_activity": "What student does",
-                "evaluation": "A question to ask"
-            }
-        ],
-        "follow_up": "Homework or assignment"
-    }
-    Make sure to create at least 4-5 rows covering the whole text.
-    `;
+Create a JSON object for a Lesson Plan table.
+The user details are: Class ${document.getElementById("cls").value}, Subject ${document.getElementById("subject").value}, Topic ${document.getElementById("lessonTopic").value}.
+
+RETURN ONLY VALID JSON (no markdown, no extra text). Format:
+{
+    "introduction": "Brief text to introduce lesson",
+    "rows": [
+        {
+            "content": "Sub-topic or Content segment",
+            "specifications": "Specific objective (e.g. Recognizes, Understands)",
+            "teacher_activity": "What teacher does/explains",
+            "student_activity": "What student does",
+            "evaluation": "A question to ask"
+        }
+    ],
+    "follow_up": "Homework or assignment"
+}
+Make sure to create at least 4-5 rows covering the whole text.`;
 
     try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const resp = await fetch('https://api.x.ai/v1/chat/completions', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'grok-beta',  // Use 'grok-beta' for the latest stable Grok model (as of late 2025); alternatives: grok-1 (base), or check docs for newer like grok-4 if available
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant that outputs only valid JSON when asked.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.7,
+                max_tokens: 4096
+            })
         });
+
+        if (!resp.ok) {
+            const err = await resp.json();
+            throw new Error(err.error?.message || `HTTP ${resp.status}`);
+        }
         
         const data = await resp.json();
-        const rawTxt = data.candidates[0].content.parts[0].text;
-        const jsonStr = rawTxt.replace(/```json/g, '').replace(/```/g, '');
-        const plan = JSON.parse(jsonStr);
+        let rawTxt = data.choices[0].message.content.trim();
+
+        // Clean any markdown wrappers
+        rawTxt = rawTxt.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        const plan = JSON.parse(rawTxt);
 
         renderLessonPlan(plan);
-        setStatus(null);
+        setStatus("Success", "Lesson plan generated!");
+        setTimeout(() => setStatus(null), 3000);
 
     } catch(e) {
         console.error(e);
-        setStatus("Error", "AI Generation Failed. Check Console/API Key.", "error");
+        setStatus("Error", "AI Generation Failed. Check API key, quota, or console for details.", "error");
     }
 });
 
