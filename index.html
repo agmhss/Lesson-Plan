@@ -220,8 +220,14 @@ document.getElementById("generatePlan").addEventListener("click", async () => {
     const apiKey = document.getElementById("apiKeyInput").value;
     if(!apiKey) return alert("API Key required");
     if(!ocrText) return alert("Please extract text first (Step 1)");
-
-    setStatus("AI Generating", "Consulting Gemini Model...");
+//--------------------------------------------
+// AI MODEL LOADER
+//--------------------------------------------
+async function loadModel() {
+    if (!summarizer) {
+        setStatus("Loading AI model…");
+        summarizer = await window.transformers.pipeline("summarization", "Xenova/t5-small");
+        setStatus("");
 
     // PROMPT FOR STRICT JSON STRUCTURE
     const prompt = `
