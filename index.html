@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TNSB Lesson Plan Creator (Table Format)</title>
+<title>GTK Lesson Plan Creator</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
@@ -246,7 +246,7 @@ RETURN ONLY VALID JSON (no markdown, no extra text). Format:
     ],
     "follow_up": "Homework or assignment"
 }
-Make sure to create at least 4-5 rows covering the whole text.`;
+Make sure to create at least 6-7 rows covering the whole text.`;
 
     try {
         const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -386,12 +386,12 @@ async function downloadPDF() {
     const doc = new jsPDF("p", "mm", "a4");
     const pdfWidth = 210;                    // A4 width
     const pdfHeight = 297;                   // A4 height
-    const marginTopFirst = 15;               // Existing top padding (kept)
+    const marginTopFirst = 25.4;               // Existing top padding (kept)
     const marginBottomFirst = 25.4;           // 1 inch bottom margin on page 1
     const marginTopSubsequent = 25.4;         // 1 inch top margin on page 2+
     
     const usableHeightFirst = pdfHeight - marginTopFirst - marginBottomFirst;
-    const usableHeightNext = pdfHeight - marginTopSubsequent - marginTopFirst; // bottom padding still 15mm
+    const usableHeightNext = pdfHeight - marginTopSubsequent - marginBottomSubsequent; // bottom padding still 25.4mm
 
     const imgWidth = pdfWidth - 30;          // 15mm left + right padding
     const imgHeight = canvas.height * imgWidth / canvas.width;
