@@ -386,12 +386,12 @@ async function downloadPDF() {
     const doc = new jsPDF("p", "mm", "a4");
     const pdfWidth = 210;                    // A4 width
     const pdfHeight = 297;                   // A4 height
-    const marginTopFirst = 25.4;               // Existing top padding (kept)
+    const marginTopFirst = 15;               // Existing top padding (kept)
     const marginBottomFirst = 25.4;           // 1 inch bottom margin on page 1
     const marginTopSubsequent = 25.4;         // 1 inch top margin on page 2+
     
     const usableHeightFirst = pdfHeight - marginTopFirst - marginBottomFirst;
-    const usableHeightNext = pdfHeight - marginTopSubsequent - marginBottomSubsequent; // bottom padding still 25.4mm
+    const usableHeightNext = pdfHeight - marginTopFirst - marginBottomFirst; // bottom padding still 15mm
 
     const imgWidth = pdfWidth - 30;          // 15mm left + right padding
     const imgHeight = canvas.height * imgWidth / canvas.width;
