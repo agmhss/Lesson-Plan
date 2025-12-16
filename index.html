@@ -99,8 +99,9 @@
         <div class="bg-white rounded-xl shadow-lg p-6 space-y-5 h-fit">
             
             <div class="p-3 bg-gray-50 rounded border border-gray-200">
-                <label class="block text-xs font-bold text-gray-500 uppercase">Grok API Key (xAI)</label>
-                <input type="password" id="apiKeyInput" class="w-full mt-1 px-3 py-2 border rounded text-sm outline-none focus:border-indigo-500" placeholder="Paste xai-... key here" />
+                <label class="block text-xs font-bold text-gray-500 uppercase">Groq API Key</label>
+                <input type="password" id="apiKeyInput" class="w-full mt-1 px-3 py-2 border rounded text-sm outline-none focus:border-indigo-500" placeholder="Paste gq-... key here" />
+                <p class="text-xs text-gray-500 mt-1">Get your free key at <a href="https://console.groq.com/keys" target="_blank" class="underline">console.groq.com</a></p>
             </div>
 
             <div class="border-t pt-4">
@@ -221,7 +222,7 @@ document.getElementById("generatePlan").addEventListener("click", async () => {
     if(!apiKey) return alert("API Key required");
     if(!ocrText) return alert("Please extract text first (Step 1)");
 
-    setStatus("AI Generating", "Consulting Grok Model...");
+    setStatus("AI Generating", "Consulting Groq Model (fast inference)...");
 
     const prompt = `You are a Teacher for Tamil Nadu State Board.
 Analyze this textbook content:
@@ -247,14 +248,14 @@ RETURN ONLY VALID JSON (no markdown, no extra text). Format:
 Make sure to create at least 4-5 rows covering the whole text.`;
 
     try {
-        const resp = await fetch('https://api.x.ai/v1/chat/completions', {
+        const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'grok-beta',  // Use 'grok-beta' for the latest stable Grok model (as of late 2025); alternatives: grok-1 (base), or check docs for newer like grok-4 if available
+                model: 'llama-3.3-70b-versatile',  // Fast, capable model on Groq (as of late 2025); alternatives: llama-3.1-70b-versatile, mixtral-8x7b-32768, etc.
                 messages: [
                     { role: 'system', content: 'You are a helpful assistant that outputs only valid JSON when asked.' },
                     { role: 'user', content: prompt }
