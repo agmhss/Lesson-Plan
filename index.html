@@ -237,16 +237,21 @@ RETURN ONLY VALID JSON (no markdown, no extra text). Format:
     "introduction": "Brief text to introduce lesson",
     "rows": [
         {
+            "Introduction": "Short introduction of the text and its author",
             "content": "Sub-topic or Content segment",
+            "Characters": "Characters in the text and their role",
+            "Model Reading": "Teacher gives a model reading with right intonation, pause and stress",
+            "Glossary": "Meaning of unfamiliar words",
             "specifications": "Specific objective (e.g. Recognizes, Understands)",
             "teacher_activity": "What teacher does/explains",
             "student_activity": "What student does",
+            "Consolidation ": "summary, mind-map, role-play ",
             "evaluation": "A question to ask"
         }
     ],
     "follow_up": "Homework or assignment"
 }
-Make sure to create at least 4-5 rows covering the whole text.`;
+Make sure to create at least 10-11 rows covering the whole text.`;
 
     try {
         const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
